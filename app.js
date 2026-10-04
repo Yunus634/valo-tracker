@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const inputVal = inputField ? inputField.value.trim() : '';
 
       if (!inputVal || !inputVal.includes('#')) {
-        alert('Lütfen Riot ID ve Tag değerini "İsim#Etiket" şeklinde girin! (Örn: EMRE#VCG5)');
+        alert('Lütfen Riot ID ve Tag değerini "İsim#Etiket" şeklinde girin! (Örn: Player#TR1)');
         return;
       }
 
@@ -34,15 +34,14 @@ async function fetchPlayerData(name, tag, region = 'eu') {
     const options = {
       method: 'GET',
       headers: {
-        'Authorization': API_KEY
+        'Authorization': API_KEY,
+        'Hnk-Dev-Key': API_KEY
       }
     };
 
-    const proxyUrl = 'https://corsproxy.io/?';
-
-    // 1. Hesap Bilgilerini Çek
+    // 1. Hesap Bilgilerini Çek (Doğrudan İstek)
     const accountTarget = 'https://api.henrikdev.xyz/valorant/v1/account/' + encodeURIComponent(name) + '/' + encodeURIComponent(tag);
-    const accountResponse = await fetch(proxyUrl + encodeURIComponent(accountTarget), options);
+    const accountResponse = await fetch(accountTarget, options);
     const accountData = await accountResponse.json();
 
     if (accountData.status !== 200) {
@@ -50,9 +49,9 @@ async function fetchPlayerData(name, tag, region = 'eu') {
       return;
     }
 
-    // 2. Derece (Rank / MMR) Bilgilerini Çek
+    // 2. Derece (Rank / MMR) Bilgilerini Çek (Doğrudan İstek)
     const mmrTarget = 'https://api.henrikdev.xyz/valorant/v2/mmr/' + region + '/' + encodeURIComponent(name) + '/' + encodeURIComponent(tag);
-    const mmrResponse = await fetch(proxyUrl + encodeURIComponent(mmrTarget), options);
+    const mmrResponse = await fetch(mmrTarget, options);
     const mmrData = await mmrResponse.json();
 
     console.log('API Verileri:', { accountData, mmrData });
@@ -61,7 +60,7 @@ async function fetchPlayerData(name, tag, region = 'eu') {
 
   } catch (error) {
     console.error('API İsteğinde Hata Oluştu:', error);
-    alert('Veriler çekilirken bir sorun oluştu.');
+    alert('Veriler çekilirken bir sorun oluştu. Detaylar için F12 konsoluna bakın.');
   }
 }
 
