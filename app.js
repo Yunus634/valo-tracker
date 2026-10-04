@@ -37,7 +37,7 @@ async function fetchPlayerData(name, tag, region = 'eu') {
     const proxyUrl = 'https://corsproxy.io/?';
     
     // 1. Hesap Bilgileri
-    const accountTarget = https://api.henrikdev.xyz/valorant/v1/account/${encodeURIComponent(name)}/${encodeURIComponent(tag)};
+    const accountTarget = `https://api.henrikdev.xyz/valorant/v1/account/' + encodeURIComponent(name) + '/' encodeURIComponent(tag) `;
     const accountResponse = await fetch(proxyUrl + encodeURIComponent(accountTarget), options);
     const accountData = await accountResponse.json();
 
@@ -47,12 +47,12 @@ async function fetchPlayerData(name, tag, region = 'eu') {
     }
 
     // 2. MMR / Rank
-    const mmrTarget = https://api.henrikdev.xyz/valorant/v2/mmr/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)};
+    const mmrTarget = 'https://api.henrikdev.xyz/valorant/v2/mmr/' + region + '/' + encodeURIComponent(name) + '/' + encodeURIComponent(tag);
     const mmrResponse = await fetch(proxyUrl + encodeURIComponent(mmrTarget), options);
     const mmrData = await mmrResponse.json();
 
     // 3. Maç Geçmişi
-    const matchesTarget = https://api.henrikdev.xyz/valorant/v3/matches/${region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)};
+    const matchesTarget = `https://api.henrikdev.xyz/valorant/v3/matches/' + region + '/' + encodeURIComponent(name) + '/' + encodeURIComponent(tag)`;
     const matchesResponse = await fetch(proxyUrl + encodeURIComponent(matchesTarget), options);
     const matchesData = await matchesResponse.json();
 
