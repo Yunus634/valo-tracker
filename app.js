@@ -39,9 +39,12 @@ async function fetchPlayerData(name, tag, region = 'eu') {
       }
     };
 
-    // 1. Hesap Bilgilerini Çek (Doğrudan İstek)
-    const accountTarget = 'https://api.henrikdev.xyz/valorant/v1/account/' + encodeURIComponent(name) + '/' + encodeURIComponent(tag);
-    const accountResponse = await fetch(accountTarget, options);
+    // CORS engelini aşmak için AllOrigins proxy servisini kullanıyoruz
+    const makeProxyUrl = (target) => 'https://api.allorigins.win/raw?url=${encodeURIComponent(target)}';
+
+    // 1. Hesap Bilgilerini Çek
+    const accountUrl = 'https://api.henrikdev.xyz/valorant/v1/account/${encodeURIComponent(name)}/${encodeURIComponent(tag)}';
+    const accountResponse = await fetch(makeProxyUrl(accountUrl), options);
     const accountData = await accountResponse.json();
 
     if (accountData.status !== 200) {
@@ -49,18 +52,20 @@ async function fetchPlayerData(name, tag, region = 'eu') {
       return;
     }
 
-    // 2. Derece (Rank / MMR) Bilgilerini Çek (Doğrudan İstek)
-    const mmrTarget = 'https://api.henrikdev.xyz/valorant/v2/mmr/' + region + '/' + encodeURIComponent(name) + '/' + encodeURIComponent(tag);
-    const mmrResponse = await fetch(mmrTarget, options);
+    // 2. Derece (Rank / MMR) Bilgilerini Çek
+    const rawmmrUrl = 'https://api.henrikdev.xyz/valorant/v2/mmr/' + region + '/' + encodeURIComponent(name) + '/' + encodeURIComponent(tag);
+    const proxyResponse = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(rawmmrUrl);
+
+    const mmrResponse = await fetch(proxyMmrUrl, options);
     const mmrData = await mmrResponse.json();
 
-    console.log('API Verileri:', { accountData, mmrData });
+    console.log('API Verileri Başarıyla Alındı:', { accountData, mmrData });
 
     displayData(accountData.data, mmrData.data);
 
   } catch (error) {
     console.error('API İsteğinde Hata Oluştu:', error);
-    alert('Veriler çekilirken bir sorun oluştu. Detaylar için F12 konsoluna bakın.');
+    alert('Veriler çekilirken bir sorun oluştu. Lütfen ismi doğru girdiğinizden emin olun.');
   }
 }
 
