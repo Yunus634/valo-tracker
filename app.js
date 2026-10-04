@@ -1,105 +1,45 @@
-// --- 1. ELEMENT SEÇİMLERİ ---
-const riotIdInput = document.getElementById('riotIdInput');
-const searchBtn = document.getElementById('searchBtn');
-const blueTeamList = document.getElementById('blueTeamList');
-const redTeamList = document.getElementById('redTeamList');
+const API_KEY = 'HDEV-d8e7fc8b-a3a0-4ecd-b330-ac724f0356d4';
 
-// API Ana Bitiş Noktası (HenrikDev Valorant API v3)
-const API_BASE_URL = 'https://api.henrikdev.xyz/valorant/v3';
+async function fetchPlayerData(name, tag, region = 'eu') {
+  try {
+    const options = {
+      headers: {
+        'Authorization': API_KEY
+      }
+    };
 
-// --- 2. ARAMA BUTONU TIKLAMA OLAYI ---
-searchBtn.addEventListener('click', () => {
-    const fullId = riotIdInput.value.trim();
-    
-    if (!fullId.includes('#')) {
-        alert('Lütfen geçerli bir Riot ID girin! (Örn: Player#TR1)');
-        return;
+    // 1. Hesap Bilgilerini Çek
+    const accountUrl = 'https://api.henrikdev.xyz/valorant/v1/account/' + name + '/' + tag;
+    const accountResponse = await fetch(accountUrl, { headers: {'Authorization': API_KEY} });
+    const accountData = await accountResponse.json();
+
+    if (accountData.status !== 200) {
+      alert('Oyuncu bulunamadı veya bir hata oluştu!');
+      return;
     }
 
-    // ID ve TAG'i ayrıştır (Örn: "Player#TR1" -> name: "Player", tag: "TR1")
-    const [name, tag] = fullId.split('#');
-    
-    // Canlı Maç Verilerini Getir
-    fetchLiveMatch(name, tag);
-});
+    // 2. Derece (Rank / MMR) Bilgilerini Çek
+    const mmrUrl = 'https://api.henrikdev.xyz/valorant/v2/mmr/' + region + '/' + name + '/' + tag;
+    const mmrResponse = await fetch(mmrUrl, { headers: {'Authorization': API_KEY} });
+    const mmrData = await mmrResponse.json();
 
-// --- 3. CANLI MAÇ VERİLERİNİ ÇEKEN FONKSİYON ---
-async function fetchLiveMatch(name, tag) {
-    // Ekranda yükleniyor mesajı göster
-    blueTeamList.innerHTML = '<p class="loading">Maç verisi yükleniyor...</p>';
-    redTeamList.innerHTML = '<p class="loading">Maç verisi yükleniyor...</p>';
+    // 3. Maç Geçmişini Çek
+    const matchesUrl = 'https://api.henrikdev.xyz/valorant/v3/matches/' + region + '/' + name + '/' + tag;
+    const matchesResponse = await fetch(matchesUrl, { headers: {'Authorization': API_KEY} });
+    const matchesData = await matchesResponse.json();
 
-    try {
-        // API Endpoint: Oyuncunun aktif/son maçını getirir
-        const response = await fetch(API_BASE_URL + '/matches/eu/' + encodeURIComponent(name) + '/' + encodeURIComponent(tag) + '?size=1');
-        
-        if (!response.ok) {
-            throw new Error('Oyuncu veya canlı maç bulunamadı.');
-        }
+    console.log('Hesap Bilgileri:', accountData);
+    console.log('MMR / Rank Bilgileri:', mmrData);
+    console.log('Maç Geçmişi:', matchesData);
 
-        const result = await response.json();
-        const matchData = result.data[0]; // En son / aktif maç verisi
+    // Verileri arayüze basma fonksiyonu
+    displayData(accountData.data, mmrData.data, matchesData.data);
 
-        // Maçtaki oyuncuları takımlara ve gruplara ayırıp ekrana bas
-        renderTeams(matchData.players.all_players);
-
-    } catch (error) {
-        console.error('API Hatası:', error);
-        blueTeamList.innerHTML = '<p class="error">Veri alınamadı veya oyuncu şu an maçta değil.</p>';
-        redTeamList.innerHTML = '<p class="error">Veri alınamadı.</p>';
-    }
+  } catch (error) {
+    console.error('API İsteği Sırasında Hata Oluştu:', error);
+  }
 }
 
-// --- 4. OYUNCULARI VE GRUPLARI (PARTY) EKRANA YAZDIRAN FONKSİYON ---
-function renderTeams(players) {
-    // Liste alanlarını temizle
-    blueTeamList.innerHTML = '';
-    redTeamList.innerHTML = '';
-
-    // Aynı grupta olan kişileri tespit etmek için Parti Mantığı (party_id takibi)
-    const partyMap = {};
-    let partyCounter = 1;
-
-    // Her oyuncunun party_id'sine göre grup numarası ata
-    players.forEach(player => {
-        if (!partyMap[player.party_id]) {
-            partyMap[player.party_id] = partyCounter++;
-        }
-    });
-
-    // Oyuncuları döngüye alıp Mavi ve Kırmızı takıma ayır
-    players.forEach(player => {
-        const partyGroupNumber = partyMap[player.party_id];
-        const playerCard = createPlayerCard(player, partyGroupNumber);
-
-        if (player.team.toLowerCase() === 'blue') {
-            blueTeamList.appendChild(playerCard);
-        } else {
-            redTeamList.appendChild(playerCard);
-        }
-    });
-}
-
-// --- 5. OYUNCU KARTI HTML ŞABLONU OLUŞTURMA ---
-function createPlayerCard(player, partyGroupNumber) {
-    const card = document.createElement('div');
-    card.className = 'player-card party-group-' + partyGroupNumber;
-
-    // Rank ismi ve ikonu
-    const rankName = player.currenttier_patched || 'Unranked';
-    const characterName = player.character || 'Agent';
-
-    card.innerHTML = `
-        <div class="player-info">
-            <span class="agent-name">${characterName}</span>
-            <strong class="player-name">${player.name}#${player.tag}</strong>
-        </div>
-        <div class="player-stats">
-            <span class="level">Svd: ${player.level}</span>
-            <span class="rank">${rankName}</span>
-            <span class="party-tag">Grup #${partyGroupNumber}</span>
-        </div>
-    `;
-
-    return card;
+function displayData(account, mmr, matches) {
+  console.log('Arayüz verileri alındı:', { account, mmr, matches });
 }
