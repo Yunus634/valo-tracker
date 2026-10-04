@@ -1,35 +1,35 @@
 const API_KEY = 'HDEV-d8e7fc8b-a3a0-4ecd-b330-ac724f0356d4';
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Arama butonunu id veya genel button olarak yakala
-  const searchBtn = document.getElementById('search-btn') || document.querySelector('button');
+  const searchBtn = document.getElementById('searchBtn');
+  const inputField = document.getElementById('riotIdInput');
 
   if (searchBtn) {
     searchBtn.addEventListener('click', (e) => {
       e.preventDefault();
 
-      // Input alanlarını yakala
-      const nameInput = document.getElementById('player-name') || document.querySelectorAll('input')[0];
-      const tagInput = document.getElementById('player-tag') || document.querySelectorAll('input')[1];
+      const inputVal = inputField ? inputField.value.trim() : '';
 
-      const nameVal = nameInput ? nameInput.value.trim() : '';
-      const tagVal = tagInput ? tagInput.value.trim().replace('#', '') : '';
-
-      if (!nameVal || !tagVal) {
-        alert('Lütfen hem oyuncu adını hem de etiketini girin!');
+      if (!inputVal || !inputVal.includes('#')) {
+        alert('Lütfen Riot ID ve Tag değerini "İsim#Etiket" şeklinde girin! (Örn: EMRE#VCG5)');
         return;
       }
 
-      fetchPlayerData(nameVal, tagVal);
+      const parts = inputVal.split('#');
+      const name = parts[0].trim();
+      const tag = parts[1].trim();
+
+      if (!name || !tag) {
+        alert('Lütfen geçerli bir isim ve etiket girin!');
+        return;
+      }
+
+      fetchPlayerData(name, tag);
     });
   }
 });
 
-async function fetchPlayerData(name, tag, region) {
-  if (!region) {
-    region = 'eu';
-  }
-
+async function fetchPlayerData(name, tag, region = 'eu') {
   try {
     const options = {
       method: 'GET',
@@ -46,7 +46,7 @@ async function fetchPlayerData(name, tag, region) {
     const accountData = await accountResponse.json();
 
     if (accountData.status !== 200) {
-      alert('Oyuncu bulunamadı! İsim ve etiketi kontrol edin.');
+      alert('Oyuncu bulunamadı! Lütfen ismi ve etiketi kontrol edin.');
       return;
     }
 
@@ -55,14 +55,9 @@ async function fetchPlayerData(name, tag, region) {
     const mmrResponse = await fetch(proxyUrl + encodeURIComponent(mmrTarget), options);
     const mmrData = await mmrResponse.json();
 
-    // 3. Maç Geçmişini Çek
-    const matchesTarget = 'https://api.henrikdev.xyz/valorant/v3/matches/' + region + '/' + encodeURIComponent(name) + '/' + encodeURIComponent(tag);
-    const matchesResponse = await fetch(proxyUrl + encodeURIComponent(matchesTarget), options);
-    const matchesData = await matchesResponse.json();
+    console.log('API Verileri:', { accountData, mmrData });
 
-    console.log('API Verileri:', { accountData, mmrData, matchesData });
-
-    displayData(accountData.data, mmrData.data, matchesData.data);
+    displayData(accountData.data, mmrData.data);
 
   } catch (error) {
     console.error('API İsteğinde Hata Oluştu:', error);
@@ -70,18 +65,18 @@ async function fetchPlayerData(name, tag, region) {
   }
 }
 
-function displayData(account, mmr, matches) {
-  const resultDiv = document.getElementById('result') || document.getElementById('player-card') || document.querySelector('.result-container');
+function displayData(account, mmr) {
+  const blueList = document.getElementById('blueTeamList');
 
-  if (resultDiv && account) {
-    resultDiv.style.display = 'block';
+  const rankName = (mmr && mmr.current_data) ? mmr.current_data.currenttierpatched : 'Derecesiz';
 
-    const rankName = (mmr && mmr.current_data) ? mmr.current_data.currenttierpatched : 'Derecesiz';
-    const matchCount = (matches && Array.isArray(matches)) ? matches.length : 0;
-
-    resultDiv.innerHTML = '<h2>' + account.name + ' #' + account.tag + '</h2>' +
-      '<p><strong>Hesap Seviyesi:</strong> ' + account.account_level + '</p>' +
-      '<p><strong>Mevcut Rank:</strong> ' + rankName + '</p>' +
-      '<p><strong>Son Maç Sayısı:</strong> ' + matchCount + '</p>';
+  if (blueList && account) {
+    blueList.innerHTML = `
+      <div style="padding: 12px; background: rgba(255,255,255,0.1); margin-top: 10px; border-radius: 6px;">
+        <h3 style="margin: 0 0 5px 0;">${account.name} #${account.tag}</h3>
+        <p style="margin: 2px 0;"><strong>Seviye:</strong> ${account.account_level}</p>
+        <p style="margin: 2px 0;"><strong>Rank:</strong> ${rankName}</p>
+      </div>
+    `;
   }
 }
