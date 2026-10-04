@@ -1,89 +1,33 @@
-const API_KEY = 'HDEV-d8e7fc8b-a3a0-4ecd-b330-ac724f0356d4';
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Valorant Match Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Valorant Canlı Maç Takip</h1>
 
-document.addEventListener('DOMContentLoaded', () => {
-  const searchBtn = document.getElementById('searchBtn');
-  const inputField = document.getElementById('riotIdInput');
+    <div class="search-box">
+      <input type="text" id="riotIdInput" placeholder="Riot ID ve Tag (Örn: Player#TR1)">
+      <button id="searchBtn">Maç Ara</button>
+    </div>
 
-  if (searchBtn) {
-    searchBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-
-      const inputVal = inputField ? inputField.value.trim() : '';
-
-      // Kullanıcı isim ve etiket arasına # koydu mu kontrol et (Örn: Player#TR1)
-      if (!inputVal || !inputVal.includes('#')) {
-        alert('Lütfen Riot ID ve Tag değerini "İsim#Etiket" şeklinde girin! (Örn: Player#TR1)');
-        return;
-      }
-
-      const parts = inputVal.split('#');
-      const name = parts[0].trim();
-      const tag = parts[1].trim();
-
-      if (!name || !tag) {
-        alert('Lütfen geçerli bir isim ve etiket girin!');
-        return;
-      }
-
-      fetchPlayerData(name, tag);
-    });
-  }
-});
-
-async function fetchPlayerData(name, tag, region = 'eu') {
-  try {
-    const options = {
-      method: 'GET',
-      headers: {
-        'Authorization': API_KEY
-      }
-    };
-
-    const proxyUrl = 'https://corsproxy.io/?';
-
-    // 1. Hesap Bilgilerini Çek
-    const accountTarget = 'https://api.henrikdev.xyz/valorant/v1/account/' + encodeURIComponent(name) + '/' + encodeURIComponent(tag);
-    const accountResponse = await fetch(proxyUrl + encodeURIComponent(accountTarget), options);
-    const accountData = await accountResponse.json();
-
-    if (accountData.status !== 200) {
-      alert('Oyuncu bulunamadı! Lütfen ismi ve etiketi kontrol edin.');
-      return;
-    }
-
-    // 2. Derece (Rank / MMR) Bilgilerini Çek
-    const mmrTarget = 'https://api.henrikdev.xyz/valorant/v2/mmr/' + region + '/' + encodeURIComponent(name) + '/' + encodeURIComponent(tag);
-    const mmrResponse = await fetch(proxyUrl + encodeURIComponent(mmrTarget), options);
-    const mmrData = await mmrResponse.json();
-
-    // 3. Maç Geçmişini Çek
-    const matchesTarget = 'https://api.henrikdev.xyz/valorant/v3/matches/' + region + '/' + encodeURIComponent(name) + '/' + encodeURIComponent(tag);
-    const matchesResponse = await fetch(proxyUrl + encodeURIComponent(matchesTarget), options);
-    const matchesData = await matchesResponse.json();
-
-    console.log('API Verileri:', { accountData, mmrData, matchesData });
-
-    displayData(accountData.data, mmrData.data, matchesData.data);
-
-  } catch (error) {
-    console.error('API İsteğinde Hata Oluştu:', error);
-    alert('Veriler çekilirken bir sorun oluştu.');
-  }
-}
-
-function displayData(account, mmr, matches) {
-  const blueList = document.getElementById('blueTeamList');
-  const redList = document.getElementById('redTeamList');
-
-  const rankName = (mmr && mmr.current_data) ? mmr.current_data.currenttierpatched : 'Derecesiz';
-
-  if (blueList) {
-    blueList.innerHTML = `
-      <div style="padding: 10px; background: rgba(255,255,255,0.1); margin-top: 10px; border-radius: 5px;">
-        <h3>${account.name} #${account.tag}</h3>
-        <p><strong>Seviye:</strong> ${account.account_level}</p>
-        <p><strong>Rank:</strong> ${rankName}</p>
+    <div class="teams-container">
+      <div class="team-box blue-team">
+        <h2>Mavi Takım</h2>
+        <div id="blueTeamList"></div>
       </div>
-    `;
-  }
-}
+
+      <div class="team-box red-team">
+        <h2>Kırmızı Takım</h2>
+        <div id="redTeamList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
